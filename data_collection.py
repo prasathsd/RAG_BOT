@@ -1,6 +1,6 @@
 import wikipediaapi
 
-def fetch_wikipedia_pages(topic_list, num_sentences=50):
+def fetch_wikipedia_pages(topic_list, num_sentences=500):
     # Initialize Wikipedia with correct user-agent syntax
     wiki_wiki = wikipediaapi.Wikipedia(language='en', user_agent='Chatbot1(prasath1503dpi@gmail.com)')
 

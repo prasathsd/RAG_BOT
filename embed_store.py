@@ -1,31 +1,34 @@
 import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
 import pickle
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
 # Load embedding model
+print("Loading SentenceTransformer model...")
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+print("Model loaded successfully!")
 
 # Load corpus
-with open("corpus.txt", "r", encoding="utf-8") as file:
-    corpus = file.read().split("\n")
+try:
+    print("Loading corpus...")
+    with open("corpus.pkl", "rb") as f:
+        corpus = pickle.load(f)
+    print(f"Corpus loaded successfully! ({len(corpus)} documents)")
+except Exception as e:
+    print(f"Error loading corpus: {e}")
+    exit()
 
-# Generate embeddings
-corpus_embeddings = embedding_model.encode(corpus)
-
-# Convert to NumPy array
-embedding_dim = corpus_embeddings.shape[1]
-corpus_embeddings = np.array(corpus_embeddings, dtype=np.float32)
+# Compute embeddings
+print("Computing embeddings for corpus...")
+embeddings = embedding_model.encode(corpus, convert_to_numpy=True)
+print("Embeddings computed!")
 
 # Create FAISS index
-index = faiss.IndexFlatL2(embedding_dim)
-index.add(corpus_embeddings)
+print("Building FAISS index...")
+index = faiss.IndexFlatL2(embeddings.shape[1])
+index.add(embeddings.astype(np.float32))
+print("FAISS index built successfully!")
 
-# Save index
+# Save FAISS index
 faiss.write_index(index, "vector_index.faiss")
-
-# Save corpus mapping
-with open("corpus.pkl", "wb") as f:
-    pickle.dump(corpus, f)
-
-print("Vector database created and stored successfully!")
+print("FAISS index saved as 'vector_index.faiss'!")

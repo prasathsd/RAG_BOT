@@ -4,42 +4,45 @@ import pickle
 from sentence_transformers import SentenceTransformer
 
 # Load embedding model
-try:
-    print("Loading SentenceTransformer model...")
-    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    print("Model loaded successfully!")
-except Exception as e:
-    print(f"Error loading model: {e}")
-    exit()
+print("Loading SentenceTransformer model...")
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+print("Model loaded successfully!")
 
 # Load FAISS index
-try:
-    print("Loading FAISS index...")
-    index = faiss.read_index("vector_index.faiss")
-    print("Index loaded successfully!")
-except Exception as e:
-    print(f"Error loading FAISS index: {e}")
-    exit()
+print("Loading FAISS index...")
+index = faiss.read_index("vector_index.faiss")
+print("Index loaded successfully!")
 
 # Load corpus
-try:
-    print("Loading corpus...")
-    with open("corpus.pkl", "rb") as f:
-        corpus = pickle.load(f)
-    print("Corpus loaded successfully!")
-except Exception as e:
-    print(f"Error loading corpus: {e}")
-    exit()
+print("Loading corpus...")
+with open("corpus.pkl", "rb") as f:
+    corpus = pickle.load(f)
+print(f"Corpus loaded successfully! ({len(corpus)} documents)")
 
 def retrieve_top_k(query, k=3):
-    print(f"Query: {query}")
+    print(f"\n🔍 Query: {query}")
     query_embedding = embedding_model.encode([query]).astype(np.float32)
-    
-    # Search
+
+    # Search in FAISS
     distances, indices = index.search(query_embedding, k)
     
-    results = [corpus[i] for i in indices[0]]
-    
-    return results
+    print(f"📌 Retrieved indices: {indices}")
+    print(f"📏 Distances: {distances}")
 
-print(retrieve_top_k("neural networks"))
+    # Fetch full document text for each retrieved index
+    results = [corpus[i] for i in indices[0] if i < len(corpus)]
+
+    # Filter out single-word or too-short responses
+    filtered_results = [doc for doc in results if len(doc.split()) > 5]
+
+    # If filtering removes all documents, return at least one
+    final_response = filtered_results[0] if filtered_results else results[0]
+
+    print(f"✅ Final Response: {final_response}")
+    
+    return final_response
+
+
+# Example query test
+if __name__ == "__main__":
+    print(retrieve_top_k("what is supervised learning?"))
